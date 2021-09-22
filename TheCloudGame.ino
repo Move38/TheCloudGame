@@ -32,6 +32,8 @@ Timer resetTimer;
 Timer slowTimer;
 #define DELAY 500
 
+bool firstFromWake = false;
+
 void setup() {
   // nothing to do here
 }
@@ -44,6 +46,17 @@ void loop() {
   /*
      INPUTS
   */
+
+  // dump input from wake
+  if (hasWoken()) {
+    firstFromWake = true;
+  }
+
+  if ( buttonReleased() && firstFromWake )
+  {
+    buttonSingleClicked();
+    firstFromWake = false;
+  }
 
   if ( buttonSingleClicked() ) {
     // flip
