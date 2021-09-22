@@ -44,6 +44,7 @@ void loop() {
   /*
      INPUTS
   */
+
   if ( buttonSingleClicked() ) {
     // flip
     wasClicked = true;
@@ -94,7 +95,8 @@ void loop() {
         }
         // done receiving
       }
-      else if ( neighborVal == RESET ) {
+
+      if ( neighborVal == RESET ) {
         if ( resetTimer.isExpired() ) {
           resetTimer.set( RESET_DURATION );
           isOn = false;
@@ -102,7 +104,7 @@ void loop() {
         }
       }
 
-      if ( neighborVal <= MAX_DISTANCE && neighborVal > inverseDistanceFromOff ) {
+      if ( neighborVal <= MAX_DISTANCE && neighborVal >= inverseDistanceFromOff ) {
         if (neighborVal > 0) {
           inverseDistanceFromOff = neighborVal - 1;
         }
@@ -183,7 +185,6 @@ void loop() {
     case FLIP:  setColorOnFace( BLUE,  0 );   break;
     case ACK:   setColorOnFace( GREEN, 0 );   break;
     case RESET: setColorOnFace( RED,   0 );   break;
-    case 0:     setColorOnFace( MAGENTA, 0);  break;
     default:    setColorOnFace( YELLOW, 0);   break;
   }
   //  }
