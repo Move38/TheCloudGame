@@ -34,6 +34,42 @@ Timer slowTimer;
 
 bool firstFromWake = false;
 
+/*
+   WIN CONDITION ANIMATION VARIABLES
+*/
+//Silver Lining Constants for delta
+#define SPARKLE_DURATION        800
+#define SPARKLE_CYCLE_DURATION  1600
+
+
+//Sun Spot Values
+byte sunSpot_hue = 30;
+byte setupFadeFace;
+Timer setupFadeTimer;
+word backgroundTime;
+#define SETUP_FADE_UP_INTERVAL 1000
+#define SETUP_RED_INTERVAL 500
+#define SETUP_FADE_DELAY 4000
+
+
+//Timers
+
+Timer fadeToBright;
+Timer sunSpotFade;
+Timer fadeToCloud;
+Timer fadeToDark;
+
+#define FADE_TO_BRIGHT_DELAY 2000
+#define SUN_SPOT_FADE 1000
+#define FADE_TO_CLOUD_DELAY 3000
+#define FADE_TO_DARK_DELAY 1000
+
+
+/*
+   WIN CONDITION ANIMATION
+*/
+
+
 void setup() {
   // nothing to do here
 }
@@ -173,17 +209,26 @@ void loop() {
     setColor(WHITE);
   }
   else {
-    setColorOnFace(dim(BLUE, 128), 0);
-    setColorOnFace(dim(BLUE,  64), 1);
-    setColorOnFace(dim(BLUE, 128), 2);
-    setColorOnFace(dim(BLUE,  64), 3);
-    setColorOnFace(dim(BLUE, 128), 4);
-    setColorOnFace(dim(BLUE,  64), 5);
+    byte groupAbri = 64 + sin8_C( millis() / 8 ) / 4;
+    byte groupBbri = 64 + sin8_C( 128 + (millis() / 8) ) / 4;
+    setColorOnFace(makeColorHSB(160, 255, groupAbri), 0);
+    setColorOnFace(makeColorHSB(160, 255, groupBbri), 1);
+    setColorOnFace(makeColorHSB(160, 255, groupAbri), 2);
+    setColorOnFace(makeColorHSB(160, 255, groupBbri), 3);
+    setColorOnFace(makeColorHSB(160, 255, groupAbri), 4);
+    setColorOnFace(makeColorHSB(160, 255, groupBbri), 5);
   }
 
   if ( myCommState == 0 ) {
     // display win
-    setColor( MAGENTA );
+    //    setColor( MAGENTA );
+    fadeToNoLight();
+    if (fadeToDark.isExpired()) {
+      silverLiningDisplay();
+    }
+  }
+  else {
+    initWin();
   }
 
   if ( !resetTimer.isExpired() ) {
@@ -194,12 +239,12 @@ void loop() {
   /*
      DEBUG DISPLAY
   */
-  switch ( myCommState ) {
-    case FLIP:  setColorOnFace( BLUE,  0 );   break;
-    case ACK:   setColorOnFace( GREEN, 0 );   break;
-    case RESET: setColorOnFace( RED,   0 );   break;
-    default:    setColorOnFace( YELLOW, 0);   break;
-  }
+  //  switch ( myCommState ) {
+  //    case FLIP:  setColorOnFace( BLUE,  0 );   break;
+  //    case ACK:   setColorOnFace( GREEN, 0 );   break;
+  //    case RESET: setColorOnFace( RED,   0 );   break;
+  //    default:    setColorOnFace( YELLOW, 0);   break;
+  //  }
   //  }
 }
 
@@ -232,4 +277,101 @@ bool areAnyNeighbors(byte val) {
 
   // looks like all connected are NOT the val
   return false;
+}
+
+/*
+   WIN ANIMATION
+*/
+void initWin() {
+  //Set Timers
+  setupFadeTimer.set(backgroundTime + SETUP_FADE_UP_INTERVAL + random(SETUP_FADE_DELAY));
+  fadeToBright.set(FADE_TO_BRIGHT_DELAY);
+  fadeToDark.set(FADE_TO_DARK_DELAY);
+  fadeToCloud.set(FADE_TO_CLOUD_DELAY);
+}
+
+void fadeToNoLight() {
+  FOREACH_FACE(f) {
+    byte brightness = map(fadeToDark.getRemaining(), 0, FADE_TO_DARK_DELAY, 0, 255);
+    Color faceColor = makeColorHSB(0, 0, brightness);
+    setColorOnFace(faceColor, f);
+  }
+}
+
+void silverLiningDisplay() {
+  Color faceColor_lining;
+  Color faceColor_cloud;
+
+  FOREACH_FACE(f) {
+    // minimum of 125, maximum of 255
+    byte phaseShift = 60 * f;
+    byte amplitude = 55;
+    byte midline = 185;
+    byte rate = 10;
+    byte brightness = 255 -  map(fadeToBright.getRemaining(), 0, FADE_TO_BRIGHT_DELAY - FADE_TO_DARK_DELAY, 0, 255);
+    byte cloudBrightness = 255 -  map(fadeToCloud.getRemaining(), 0, FADE_TO_CLOUD_DELAY - FADE_TO_DARK_DELAY, 0, 255);
+    if (!fadeToCloud.isExpired()) {
+
+      faceColor_lining = makeColorHSB(0, 0, brightness);
+      faceColor_cloud = makeColorHSB(160, cloudBrightness, cloudBrightness);
+
+    }
+    else {
+      faceColor_lining = makeColorHSB(0, 0, 255);
+      faceColor_cloud = makeColorHSB(160, 255, 255);
+
+    }
+    silverLining(faceColor_cloud, faceColor_lining);
+  }
+}
+
+
+
+
+void silverLining(Color faceColor_Cloud, Color faceColor_Lining) {
+
+  FOREACH_FACE(f) {
+    if (!isValueReceivedOnFaceExpired(f)) { //if something there aka if within the cloud
+
+      Color fadeColor;
+      byte saturation;
+      byte hue;
+      // have the color on the Blink raise and lower to feel more alive
+      byte bri = 185 + sin8_C( (millis() / 14) % 255) * 70 / 255; // oscillate between values 185and 255
+
+
+      if (setupFadeTimer.isExpired()) { //fade timer for sun spots
+        setupFadeFace = f; //assign face
+        backgroundTime = SETUP_RED_INTERVAL + random(SETUP_RED_INTERVAL / 2); //bit of randomness
+        setupFadeTimer.set(backgroundTime + SETUP_FADE_UP_INTERVAL + random(SETUP_FADE_DELAY));
+      }
+
+
+      if (setupFadeTimer.getRemaining() < backgroundTime + SETUP_FADE_UP_INTERVAL) {//we are inside the animation
+        if (setupFadeTimer.getRemaining() < SETUP_FADE_UP_INTERVAL) {//we are fading
+          saturation = 255 - map(setupFadeTimer.getRemaining(), 0, SETUP_FADE_UP_INTERVAL, 0, 255);
+          fadeColor = makeColorHSB(160, saturation, bri); //sun spot fade
+        } else {
+          sunSpotFade.set(SUN_SPOT_FADE);
+          if (!sunSpotFade.isExpired()) {
+            saturation =  map(sunSpotFade.getRemaining(), SUN_SPOT_FADE, 0, 0, 255);
+            fadeColor = makeColorHSB(sunSpot_hue, saturation, bri); //sunspot burst
+          }
+
+        }
+
+        setColorOnFace(fadeColor, setupFadeFace); //set sun spot colors
+      }
+
+      //fadeColor = makeColorHSB(160, 255, bri); //cloud colour
+      setColorOnFace(faceColor_Cloud, f);  //set cloud colours
+    }
+
+
+    else {
+      setColorOnFace(faceColor_Lining, f); // if not within the cloud, display the lining color (edges)
+
+    }
+
+  }
 }
