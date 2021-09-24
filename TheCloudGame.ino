@@ -309,8 +309,8 @@ void displayWin() {
 
     FOREACH_FACE(f) {
       if (isValueReceivedOnFaceExpired(f)) { // only the borders
-        byte bri = 255 - map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
-        bool on = random(4) == 0;
+        byte bri = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
+        bool on = random(12) > 0;
         if (on) {
           setColorOnFace(dim(WHITE, bri), f);
         }
@@ -327,17 +327,16 @@ void displayWin() {
 
     FOREACH_FACE(f) {
       if (isValueReceivedOnFaceExpired(f)) { // only the borders
-        byte bri = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
-        bool on = random(4) == 0;
+        bool on = random(12) > 0;
         if (on) {
-          setColorOnFace(dim(WHITE, bri), f);
+          setColorOnFace(WHITE, f);
         }
         else {
           setColorOnFace(dim(WHITE, 128), f);
         }
       }
       else {
-        byte bri = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
+        byte bri = map(timeSinceWin, START_STAGE_3, END_STAGE_3, 0, 255);
         setColorOnFace(makeColorHSB(160, 255, bri), f);
       }
     }
@@ -349,10 +348,9 @@ setColor(OFF);
 
     FOREACH_FACE(f) {
       if (isValueReceivedOnFaceExpired(f)) { // only the borders
-        byte bri = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
-        bool on = random(4) == 0;
+        bool on = random(12) > 0;
         if (on) {
-          setColorOnFace(dim(WHITE, bri), f);
+          setColorOnFace(WHITE, f);
         }
         else {
           setColorOnFace(dim(WHITE, 196), f);
