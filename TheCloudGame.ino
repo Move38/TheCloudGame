@@ -44,25 +44,9 @@ bool firstFromWake = false;
 
 //Sun Spot Values
 byte sunSpot_hue = 30;
-byte setupFadeFace;
-Timer setupFadeTimer;
-word backgroundTime;
-#define SETUP_FADE_UP_INTERVAL 1000
-#define SETUP_RED_INTERVAL 500
-#define SETUP_FADE_DELAY 4000
-
-
-//Timers
-
-Timer fadeToBright;
-Timer sunSpotFade;
-Timer fadeToCloud;
-Timer fadeToDark;
-
-#define FADE_TO_BRIGHT_DELAY 2000
-#define SUN_SPOT_FADE 1000
-#define FADE_TO_CLOUD_DELAY 3000
-#define FADE_TO_DARK_DELAY 1000
+Timer sunSpotTimer;
+Timer sunSpotDelayTimer;
+byte sunspotFace = FACE_COUNT;
 
 uint32_t timeOfWinCondition = 0;
 
@@ -73,6 +57,7 @@ uint32_t timeOfWinCondition = 0;
 
 void setup() {
   // nothing to do here
+  randomize();
 }
 
 
@@ -280,9 +265,11 @@ bool areAnyNeighbors(byte val) {
    WIN ANIMATION - REDUX
 */
 
-#define WIN_ANI_STAGE_1_DURATION 2000
-#define WIN_ANI_STAGE_2_DURATION 1000
-#define WIN_ANI_STAGE_3_DURATION 1500
+#define WIN_ANI_STAGE_1_DURATION 1000
+#define WIN_ANI_STAGE_2_DURATION 600
+#define WIN_ANI_STAGE_3_DURATION 1000
+
+#define SUNSPOT_DURATION 1000
 
 #define END_STAGE_1     WIN_ANI_STAGE_1_DURATION
 #define START_STAGE_2   WIN_ANI_STAGE_1_DURATION
@@ -309,13 +296,16 @@ void displayWin() {
 
     FOREACH_FACE(f) {
       if (isValueReceivedOnFaceExpired(f)) { // only the borders
-        byte bri = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
-        bool on = random(12) > 0;
+        byte bri;
+        byte chance = map(timeSinceWin, START_STAGE_2, END_STAGE_3, 4, 48);
+        bool on = random(chance) > 0;
         if (on) {
+          bri = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
           setColorOnFace(dim(WHITE, bri), f);
         }
         else {
-          setColorOnFace(OFF, f);
+          bri = 255 - map(timeSinceWin, START_STAGE_2, END_STAGE_3, 0, 255);
+          setColorOnFace(dim(WHITE, bri), f);
         }
       }
     }
@@ -327,12 +317,14 @@ void displayWin() {
 
     FOREACH_FACE(f) {
       if (isValueReceivedOnFaceExpired(f)) { // only the borders
-        bool on = random(12) > 0;
+        byte chance = map(timeSinceWin, START_STAGE_2, END_STAGE_3, 4, 48);
+        bool on = random(chance) > 0;
         if (on) {
           setColorOnFace(WHITE, f);
         }
         else {
-          setColorOnFace(dim(WHITE, 128), f);
+          byte bri = map(timeSinceWin, START_STAGE_3, END_STAGE_3, 0, 255);
+          setColorOnFace(dim(WHITE, bri), f);
         }
       }
       else {
@@ -344,23 +336,45 @@ void displayWin() {
   }
   // Stage 4 - loop the center sun spots
   else {
-setColor(OFF);
+    setColor(OFF);
+
+    // choose sun spot location
+    if (sunSpotTimer.isExpired()) {
+      if (sunSpotDelayTimer.isExpired()) {
+        uint16_t delayTime = 1000 + random(3000);
+        sunSpotDelayTimer.set(delayTime);
+        sunspotFace = random(5);
+        sunSpotTimer.set(SUNSPOT_DURATION);
+      }
+    }
 
     FOREACH_FACE(f) {
       if (isValueReceivedOnFaceExpired(f)) { // only the borders
-        bool on = random(12) > 0;
-        if (on) {
-          setColorOnFace(WHITE, f);
-        }
-        else {
-          setColorOnFace(dim(WHITE, 196), f);
-        }
+        setColorOnFace(WHITE, f);
       }
       else {
-        setColorOnFace(makeColorHSB(160, 255, 255), f);
+        // setColorOnFace(makeColorHSB(160, 255, 255), f);
 
         // sunspots here
-        
+        if ( !sunSpotTimer.isExpired() && sunspotFace == f) {
+          
+          byte hue, sat, bri;
+
+          if ( sunSpotTimer.getRemaining() > SUNSPOT_DURATION/2 ) {
+            hue = sunSpot_hue;
+            sat =  map( sunSpotTimer.getRemaining(), SUNSPOT_DURATION/2, SUNSPOT_DURATION, 0, 255);
+            bri = map( sunSpotTimer.getRemaining(), SUNSPOT_DURATION/2, SUNSPOT_DURATION, 0, 255);
+          }
+          else {
+            hue = 160;
+            sat = 255 - map( sunSpotTimer.getRemaining(), 0, SUNSPOT_DURATION/2, 0, 255);
+            bri = 255 - map( sunSpotTimer.getRemaining(), 0, SUNSPOT_DURATION/2, 0, 255);            
+          }
+          setColorOnFace( makeColorHSB(hue, sat, bri), f); //sunspot burst
+        }
+        else {
+          setColorOnFace( makeColorHSB(160, 255, 255), f); // sky color
+        }
       }
     }
 
