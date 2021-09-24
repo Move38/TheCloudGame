@@ -64,6 +64,7 @@ Timer fadeToDark;
 #define FADE_TO_CLOUD_DELAY 3000
 #define FADE_TO_DARK_DELAY 1000
 
+uint32_t timeOfWinCondition = 0;
 
 /*
    WIN CONDITION ANIMATION
@@ -221,14 +222,10 @@ void loop() {
 
   if ( myCommState == 0 ) {
     // display win
-    //    setColor( MAGENTA );
-    fadeToNoLight();
-    if (fadeToDark.isExpired()) {
-      silverLiningDisplay();
-    }
+    displayWin();
   }
   else {
-    initWin();
+    timeOfWinCondition = millis();
   }
 
   if ( !resetTimer.isExpired() ) {
@@ -280,98 +277,95 @@ bool areAnyNeighbors(byte val) {
 }
 
 /*
-   WIN ANIMATION
+   WIN ANIMATION - REDUX
 */
-void initWin() {
-  //Set Timers
-  setupFadeTimer.set(backgroundTime + SETUP_FADE_UP_INTERVAL + random(SETUP_FADE_DELAY));
-  fadeToBright.set(FADE_TO_BRIGHT_DELAY);
-  fadeToDark.set(FADE_TO_DARK_DELAY);
-  fadeToCloud.set(FADE_TO_CLOUD_DELAY);
-}
 
-void fadeToNoLight() {
-  FOREACH_FACE(f) {
-    byte brightness = map(fadeToDark.getRemaining(), 0, FADE_TO_DARK_DELAY, 0, 255);
-    Color faceColor = makeColorHSB(0, 0, brightness);
-    setColorOnFace(faceColor, f);
+#define WIN_ANI_STAGE_1_DURATION 2000
+#define WIN_ANI_STAGE_2_DURATION 1000
+#define WIN_ANI_STAGE_3_DURATION 1500
+
+#define END_STAGE_1     WIN_ANI_STAGE_1_DURATION
+#define START_STAGE_2   WIN_ANI_STAGE_1_DURATION
+#define END_STAGE_2     WIN_ANI_STAGE_1_DURATION + WIN_ANI_STAGE_2_DURATION
+#define START_STAGE_3   WIN_ANI_STAGE_1_DURATION + WIN_ANI_STAGE_2_DURATION
+#define END_STAGE_3     WIN_ANI_STAGE_1_DURATION + WIN_ANI_STAGE_2_DURATION + WIN_ANI_STAGE_3_DURATION
+
+
+void displayWin() {
+
+  uint32_t timeSinceWin = millis() - timeOfWinCondition;
+
+  // Stage 1 - fade down
+  if ( timeSinceWin < END_STAGE_1 ) {
+
+    byte bri = 255 - map(timeSinceWin, 0, WIN_ANI_STAGE_1_DURATION, 0, 255);
+    setColor(dim(WHITE, bri));
+
   }
-}
+  // Stage 2 - fade up border
+  else if ( timeSinceWin >= START_STAGE_2 && timeSinceWin < END_STAGE_2 ) {
 
-void silverLiningDisplay() {
-  Color faceColor_lining;
-  Color faceColor_cloud;
+    setColor(OFF);
 
-  FOREACH_FACE(f) {
-    // minimum of 125, maximum of 255
-    byte phaseShift = 60 * f;
-    byte amplitude = 55;
-    byte midline = 185;
-    byte rate = 10;
-    byte brightness = 255 -  map(fadeToBright.getRemaining(), 0, FADE_TO_BRIGHT_DELAY - FADE_TO_DARK_DELAY, 0, 255);
-    byte cloudBrightness = 255 -  map(fadeToCloud.getRemaining(), 0, FADE_TO_CLOUD_DELAY - FADE_TO_DARK_DELAY, 0, 255);
-    if (!fadeToCloud.isExpired()) {
-
-      faceColor_lining = makeColorHSB(0, 0, brightness);
-      faceColor_cloud = makeColorHSB(160, cloudBrightness, cloudBrightness);
-
-    }
-    else {
-      faceColor_lining = makeColorHSB(0, 0, 255);
-      faceColor_cloud = makeColorHSB(160, 255, 255);
-
-    }
-    silverLining(faceColor_cloud, faceColor_lining);
-  }
-}
-
-
-
-
-void silverLining(Color faceColor_Cloud, Color faceColor_Lining) {
-
-  FOREACH_FACE(f) {
-    if (!isValueReceivedOnFaceExpired(f)) { //if something there aka if within the cloud
-
-      Color fadeColor;
-      byte saturation;
-      byte hue;
-      // have the color on the Blink raise and lower to feel more alive
-      byte bri = 185 + sin8_C( (millis() / 14) % 255) * 70 / 255; // oscillate between values 185and 255
-
-
-      if (setupFadeTimer.isExpired()) { //fade timer for sun spots
-        setupFadeFace = f; //assign face
-        backgroundTime = SETUP_RED_INTERVAL + random(SETUP_RED_INTERVAL / 2); //bit of randomness
-        setupFadeTimer.set(backgroundTime + SETUP_FADE_UP_INTERVAL + random(SETUP_FADE_DELAY));
-      }
-
-
-      if (setupFadeTimer.getRemaining() < backgroundTime + SETUP_FADE_UP_INTERVAL) {//we are inside the animation
-        if (setupFadeTimer.getRemaining() < SETUP_FADE_UP_INTERVAL) {//we are fading
-          saturation = 255 - map(setupFadeTimer.getRemaining(), 0, SETUP_FADE_UP_INTERVAL, 0, 255);
-          fadeColor = makeColorHSB(160, saturation, bri); //sun spot fade
-        } else {
-          sunSpotFade.set(SUN_SPOT_FADE);
-          if (!sunSpotFade.isExpired()) {
-            saturation =  map(sunSpotFade.getRemaining(), SUN_SPOT_FADE, 0, 0, 255);
-            fadeColor = makeColorHSB(sunSpot_hue, saturation, bri); //sunspot burst
-          }
-
+    FOREACH_FACE(f) {
+      if (isValueReceivedOnFaceExpired(f)) { // only the borders
+        byte bri = 255 - map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
+        bool on = random(4) == 0;
+        if (on) {
+          setColorOnFace(dim(WHITE, bri), f);
         }
-
-        setColorOnFace(fadeColor, setupFadeFace); //set sun spot colors
+        else {
+          setColorOnFace(OFF, f);
+        }
       }
-
-      //fadeColor = makeColorHSB(160, 255, bri); //cloud colour
-      setColorOnFace(faceColor_Cloud, f);  //set cloud colours
     }
+  }
+  // Stage 3 - fade up center
+  else if ( timeSinceWin >= START_STAGE_3 && timeSinceWin < END_STAGE_3 ) {
 
+    setColor(OFF);
 
-    else {
-      setColorOnFace(faceColor_Lining, f); // if not within the cloud, display the lining color (edges)
-
+    FOREACH_FACE(f) {
+      if (isValueReceivedOnFaceExpired(f)) { // only the borders
+        byte bri = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
+        bool on = random(4) == 0;
+        if (on) {
+          setColorOnFace(dim(WHITE, bri), f);
+        }
+        else {
+          setColorOnFace(dim(WHITE, 128), f);
+        }
+      }
+      else {
+        byte bri = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
+        setColorOnFace(makeColorHSB(160, 255, bri), f);
+      }
     }
 
   }
+  // Stage 4 - loop the center sun spots
+  else {
+setColor(OFF);
+
+    FOREACH_FACE(f) {
+      if (isValueReceivedOnFaceExpired(f)) { // only the borders
+        byte bri = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
+        bool on = random(4) == 0;
+        if (on) {
+          setColorOnFace(dim(WHITE, bri), f);
+        }
+        else {
+          setColorOnFace(dim(WHITE, 196), f);
+        }
+      }
+      else {
+        setColorOnFace(makeColorHSB(160, 255, 255), f);
+
+        // sunspots here
+        
+      }
+    }
+
+  }
+
 }
