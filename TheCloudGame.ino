@@ -11,9 +11,11 @@
 
 */
 
-#define MAX_DISTANCE 16
+#define MAX_DISTANCE 24   // this can be a maximum of 60... Note: the larger this is, the longer the win takes to resolve
 
-// comms
+/* 
+ * COMMUNICATION VARIABLES 
+ */
 #define FLIP  MAX_DISTANCE + 1
 #define RESET MAX_DISTANCE + 2
 #define ACK   MAX_DISTANCE + 3
@@ -37,10 +39,6 @@ bool firstFromWake = false;
 /*
    WIN CONDITION ANIMATION VARIABLES
 */
-//Silver Lining Constants for delta
-#define SPARKLE_DURATION        800
-#define SPARKLE_CYCLE_DURATION  1600
-
 
 //Sun Spot Values
 byte sunSpot_hue = 30;
@@ -50,9 +48,17 @@ byte sunspotFace = FACE_COUNT;
 
 uint32_t timeOfWinCondition = 0;
 
-/*
-   WIN CONDITION ANIMATION
-*/
+#define WIN_ANI_STAGE_1_DURATION 1000
+#define WIN_ANI_STAGE_2_DURATION 1000
+#define WIN_ANI_STAGE_3_DURATION 1000
+
+#define SUNSPOT_DURATION 1000
+
+#define END_STAGE_1     WIN_ANI_STAGE_1_DURATION
+#define START_STAGE_2   WIN_ANI_STAGE_1_DURATION
+#define END_STAGE_2     WIN_ANI_STAGE_1_DURATION + WIN_ANI_STAGE_2_DURATION
+#define START_STAGE_3   WIN_ANI_STAGE_1_DURATION + WIN_ANI_STAGE_2_DURATION
+#define END_STAGE_3     WIN_ANI_STAGE_1_DURATION + WIN_ANI_STAGE_2_DURATION + WIN_ANI_STAGE_3_DURATION
 
 
 void setup() {
@@ -206,7 +212,6 @@ void loop() {
   }
 
   if ( myCommState == 0 ) {
-    // display win
     displayWin();
   }
   else {
@@ -267,21 +272,8 @@ bool areAnyNeighbors(byte val) {
 }
 
 /*
-   WIN ANIMATION - REDUX
+   WIN ANIMATION
 */
-
-#define WIN_ANI_STAGE_1_DURATION 1000
-#define WIN_ANI_STAGE_2_DURATION 1000
-#define WIN_ANI_STAGE_3_DURATION 1000
-
-#define SUNSPOT_DURATION 1000
-
-#define END_STAGE_1     WIN_ANI_STAGE_1_DURATION
-#define START_STAGE_2   WIN_ANI_STAGE_1_DURATION
-#define END_STAGE_2     WIN_ANI_STAGE_1_DURATION + WIN_ANI_STAGE_2_DURATION
-#define START_STAGE_3   WIN_ANI_STAGE_1_DURATION + WIN_ANI_STAGE_2_DURATION
-#define END_STAGE_3     WIN_ANI_STAGE_1_DURATION + WIN_ANI_STAGE_2_DURATION + WIN_ANI_STAGE_3_DURATION
-
 
 void displayWin() {
 
