@@ -266,7 +266,7 @@ bool areAnyNeighbors(byte val) {
 */
 
 #define WIN_ANI_STAGE_1_DURATION 1000
-#define WIN_ANI_STAGE_2_DURATION 600
+#define WIN_ANI_STAGE_2_DURATION 1000
 #define WIN_ANI_STAGE_3_DURATION 1000
 
 #define SUNSPOT_DURATION 1000
@@ -297,7 +297,7 @@ void displayWin() {
     FOREACH_FACE(f) {
       if (isValueReceivedOnFaceExpired(f)) { // only the borders
         byte bri;
-        byte chance = map(timeSinceWin, START_STAGE_2, END_STAGE_3, 4, 48);
+        byte chance = map(timeSinceWin, START_STAGE_2, END_STAGE_3, 12, 36);
         bool on = random(chance) > 0;
         if (on) {
           bri = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
@@ -317,7 +317,7 @@ void displayWin() {
 
     FOREACH_FACE(f) {
       if (isValueReceivedOnFaceExpired(f)) { // only the borders
-        byte chance = map(timeSinceWin, START_STAGE_2, END_STAGE_3, 4, 48);
+        byte chance = map(timeSinceWin, START_STAGE_2, END_STAGE_3, 12, 36);
         bool on = random(chance) > 0;
         if (on) {
           setColorOnFace(WHITE, f);
