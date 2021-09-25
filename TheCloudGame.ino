@@ -215,7 +215,12 @@ void loop() {
 
   if ( !resetTimer.isExpired() ) {
     // display reset
-    setColor( dim( WHITE, map(resetTimer.getRemaining(), 0, RESET_DURATION, 0, 255) ) );
+    if(resetTimer.getRemaining() > RESET_DURATION/2) {
+      setColor( dim( WHITE, map(resetTimer.getRemaining(), RESET_DURATION/2, RESET_DURATION, 0, 255) ) );
+    }
+    else {
+      setColor( makeColorHSB(160, 255, (96 - map(resetTimer.getRemaining(), 0, RESET_DURATION/2, 0, 96) ) ) );
+    }
   }
 
   /*
@@ -297,14 +302,14 @@ void displayWin() {
     FOREACH_FACE(f) {
       if (isValueReceivedOnFaceExpired(f)) { // only the borders
         byte bri;
-        byte chance = map(timeSinceWin, START_STAGE_2, END_STAGE_3, 12, 36);
+        byte chance = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 12, 36);
         bool on = random(chance) > 0;
         if (on) {
           bri = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
           setColorOnFace(dim(WHITE, bri), f);
         }
         else {
-          bri = 255 - map(timeSinceWin, START_STAGE_2, END_STAGE_3, 0, 255);
+          bri = 255 - map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
           setColorOnFace(dim(WHITE, bri), f);
         }
       }
@@ -317,15 +322,7 @@ void displayWin() {
 
     FOREACH_FACE(f) {
       if (isValueReceivedOnFaceExpired(f)) { // only the borders
-        byte chance = map(timeSinceWin, START_STAGE_2, END_STAGE_3, 12, 36);
-        bool on = random(chance) > 0;
-        if (on) {
-          setColorOnFace(WHITE, f);
-        }
-        else {
-          byte bri = map(timeSinceWin, START_STAGE_3, END_STAGE_3, 0, 255);
-          setColorOnFace(dim(WHITE, bri), f);
-        }
+        setColorOnFace(WHITE, f);
       }
       else {
         byte bri = map(timeSinceWin, START_STAGE_3, END_STAGE_3, 0, 255);
@@ -357,18 +354,18 @@ void displayWin() {
 
         // sunspots here
         if ( !sunSpotTimer.isExpired() && sunspotFace == f) {
-          
+
           byte hue, sat, bri;
 
-          if ( sunSpotTimer.getRemaining() > SUNSPOT_DURATION/2 ) {
+          if ( sunSpotTimer.getRemaining() > SUNSPOT_DURATION / 2 ) {
             hue = sunSpot_hue;
-            sat =  map( sunSpotTimer.getRemaining(), SUNSPOT_DURATION/2, SUNSPOT_DURATION, 0, 255);
-            bri = map( sunSpotTimer.getRemaining(), SUNSPOT_DURATION/2, SUNSPOT_DURATION, 0, 255);
+            sat =  map( sunSpotTimer.getRemaining(), SUNSPOT_DURATION / 2, SUNSPOT_DURATION, 0, 255);
+            bri = map( sunSpotTimer.getRemaining(), SUNSPOT_DURATION / 2, SUNSPOT_DURATION, 0, 255);
           }
           else {
             hue = 160;
-            sat = 255 - map( sunSpotTimer.getRemaining(), 0, SUNSPOT_DURATION/2, 0, 255);
-            bri = 255 - map( sunSpotTimer.getRemaining(), 0, SUNSPOT_DURATION/2, 0, 255);            
+            sat = 255 - map( sunSpotTimer.getRemaining(), 0, SUNSPOT_DURATION / 2, 0, 255);
+            bri = 255 - map( sunSpotTimer.getRemaining(), 0, SUNSPOT_DURATION / 2, 0, 255);
           }
           setColorOnFace( makeColorHSB(hue, sat, bri), f); //sunspot burst
         }
