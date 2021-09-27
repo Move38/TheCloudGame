@@ -13,9 +13,9 @@
 
 #define MAX_DISTANCE 24   // this can be a maximum of 60... Note: the larger this is, the longer the win takes to resolve
 
-/* 
- * COMMUNICATION VARIABLES 
- */
+/*
+   COMMUNICATION VARIABLES
+*/
 #define FLIP  MAX_DISTANCE + 1
 #define RESET MAX_DISTANCE + 2
 #define ACK   MAX_DISTANCE + 3
@@ -60,6 +60,8 @@ uint32_t timeOfWinCondition = 0;
 #define START_STAGE_3   WIN_ANI_STAGE_1_DURATION + WIN_ANI_STAGE_2_DURATION
 #define END_STAGE_3     WIN_ANI_STAGE_1_DURATION + WIN_ANI_STAGE_2_DURATION + WIN_ANI_STAGE_3_DURATION
 
+byte lightningFrame;
+byte lightningFrames[17] = {128, 96, 64, 96, 192, 128, 96, 108, 128, 100, 80, 255, 200, 96, 64, 96, 32 };
 
 void setup() {
   // nothing to do here
@@ -216,15 +218,16 @@ void loop() {
   }
   else {
     timeOfWinCondition = millis();
+    lightningFrame = 0;
   }
 
   if ( !resetTimer.isExpired() ) {
     // display reset
-    if(resetTimer.getRemaining() > RESET_DURATION/2) {
-      setColor( dim( WHITE, map(resetTimer.getRemaining(), RESET_DURATION/2, RESET_DURATION, 0, 255) ) );
+    if (resetTimer.getRemaining() > RESET_DURATION / 2) {
+      setColor( dim( WHITE, map(resetTimer.getRemaining(), RESET_DURATION / 2, RESET_DURATION, 0, 255) ) );
     }
     else {
-      setColor( makeColorHSB(160, 255, (96 - map(resetTimer.getRemaining(), 0, RESET_DURATION/2, 0, 96) ) ) );
+      setColor( makeColorHSB(160, 255, (96 - map(resetTimer.getRemaining(), 0, RESET_DURATION / 2, 0, 96) ) ) );
     }
   }
 
@@ -290,6 +293,12 @@ void displayWin() {
   else if ( timeSinceWin >= START_STAGE_2 && timeSinceWin < END_STAGE_2 ) {
 
     setColor(OFF);
+
+    // lightning
+    if ( lightningFrame < 17 ) {
+      setColor(dim(WHITE, lightningFrames[lightningFrame]));
+      lightningFrame++;
+    }
 
     FOREACH_FACE(f) {
       if (isValueReceivedOnFaceExpired(f)) { // only the borders
