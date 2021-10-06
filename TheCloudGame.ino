@@ -123,10 +123,18 @@ void loop() {
 
       // handle flip
       if ( neighborVal == FLIP ) {
-        myCommState = ACK;
-        flipReceived = true;
-        flipFace = f;
-        break;  // get out of this for loop
+        // catch case of 2 or more adjacent pieces pressed at the same time
+        if ( myCommState == FLIP ) {
+          myCommState = MAX_DISTANCE;
+          flipFace = FACE_COUNT;
+          wasClicked = false;           
+        }
+        else {
+          myCommState = ACK;
+          flipReceived = true;
+          flipFace = f;
+          break;  // get out of this for loop
+        }
       }
       else if ( neighborVal != FLIP && flipFace == f ) {
         if ( flipReceived ) {
@@ -185,6 +193,11 @@ void loop() {
     }
     else {
       myCommState = MAX_DISTANCE;
+      // Reset variables
+      wasClicked = false;
+      shouldReturn = false;
+      flipReceived = false;
+      flipFace = FACE_COUNT;
     }
   }
 
