@@ -294,25 +294,11 @@ void displayWin() {
 
     setColor(OFF);
 
-    // lightning
-    if ( lightningFrame < 17 ) {
-      setColor(dim(WHITE, lightningFrames[lightningFrame]));
-      lightningFrame++;
-    }
-
     FOREACH_FACE(f) {
       if (isValueReceivedOnFaceExpired(f)) { // only the borders
-        byte bri;
-        byte chance = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 12, 36);
-        bool on = random(chance) > 0;
-        if (on) {
-          bri = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
-          setColorOnFace(dim(WHITE, bri), f);
-        }
-        else {
-          bri = 255 - map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
-          setColorOnFace(dim(WHITE, bri), f);
-        }
+        byte bri = map(timeSinceWin, START_STAGE_2, END_STAGE_2, 0, 255);
+        setColorOnFace(dim(WHITE, bri), f);
+        
       }
     }
   }
@@ -351,8 +337,6 @@ void displayWin() {
         setColorOnFace(WHITE, f);
       }
       else {
-        // setColorOnFace(makeColorHSB(160, 255, 255), f);
-
         // sunspots here
         if ( !sunSpotTimer.isExpired() && sunspotFace == f) {
 
@@ -360,7 +344,7 @@ void displayWin() {
 
           if ( sunSpotTimer.getRemaining() > SUNSPOT_DURATION / 2 ) {
             hue = sunSpot_hue;
-            sat =  map( sunSpotTimer.getRemaining(), SUNSPOT_DURATION / 2, SUNSPOT_DURATION, 0, 255);
+            sat =  0;//map( sunSpotTimer.getRemaining(), SUNSPOT_DURATION / 2, SUNSPOT_DURATION, 0, 255);
             bri = map( sunSpotTimer.getRemaining(), SUNSPOT_DURATION / 2, SUNSPOT_DURATION, 0, 255);
           }
           else {
